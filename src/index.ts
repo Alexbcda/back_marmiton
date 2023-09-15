@@ -12,16 +12,21 @@ const sequelize = new Sequelize({
 const Recette = sequelize.define("Recette", {
   nom_recette: {
     type: DataTypes.STRING,
+    field: "nom_recette", // Le nom de la colonne dans la base de données
   },
-lienImage: {
+  lienImage: {
     type: DataTypes.BLOB,
-  }, 
-  duree: {type: DataTypes.INTEGER, 
+    field: "lienImage", // Le nom de la colonne dans la base de données
   },
-  note: {type: DataTypes.INTEGER, 
-  }
-
-})
+  duree: {
+    type: DataTypes.INTEGER,
+    field: "duree", // Le nom de la colonne dans la base de données
+  },
+  note: {
+    type: DataTypes.INTEGER,
+    field: "note", // Le nom de la colonne dans la base de données
+  },
+});
 
 
 sequelize.sync()
@@ -36,14 +41,14 @@ app.get('/hello', (req, res) => {
 })
 
 app.post("/recettes", async (req, res) => {
-  const nomRecette = req.body.nomRecette 
+  const nom_recette = req.body.nomRecette 
   const lienImage = req.body.lienImage 
   const duree = req.body.duree 
   const note = req.body.note
 
-  const nouvelleRecette = await Recette.create({ name: nomRecette, status: true })
+  const nouvelleRecette = await Recette.create({ name: nom_recette, status: true })
 
-  console.log(nomRecette, lienImage, duree, note)
+  console.log(nom_recette, lienImage, duree, note)
   res.json(nouvelleRecette)
 })
 
