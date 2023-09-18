@@ -1,57 +1,91 @@
-import express from "express"
-import "dotenv/config"
-import cors from "cors"
-import bodyParser from "body-parser"
-import { DataTypes, Sequelize } from "sequelize"
+import express from "express";
+import "dotenv/config";
+import cors from "cors";
+import bodyParser from "body-parser";
+import { DataTypes, Sequelize } from "sequelize";
 
 const sequelize = new Sequelize({
   dialect: "sqlite",
   storage: "./db.sqlite",
-})
+});
 
 const Recette = sequelize.define("Recette", {
   nom_recette: {
     type: DataTypes.STRING,
-    field: "nom_recette", // Le nom de la colonne dans la base de données
+    allowNull: false, // Assurez-vous que le nom de la recette n'est pas nul
   },
   lienImage: {
-    type: DataTypes.BLOB,
-    field: "lienImage", // Le nom de la colonne dans la base de données
+    type: DataTypes.STRING,
   },
   duree: {
     type: DataTypes.INTEGER,
-    field: "duree", // Le nom de la colonne dans la base de données
   },
   note: {
     type: DataTypes.INTEGER,
-    field: "note", // Le nom de la colonne dans la base de données
   },
 });
 
+// Synchronisez le modèle avec la base de données
+sequelize.sync().then(() => {
+  console.log("La base de données est synchronisée.");
+});
 
-sequelize.sync()
+const app = express();
+const port = process.env.PORT ? parseInt(process.env.PORT as string) : 3030;
 
-const app = express()
-const port = process.env.PORT ? parseInt(process.env.PORT as string) : 3030
-app.use(cors())
-app.use(bodyParser.json())
+app.use(cors());
+app.use(bodyParser.json());
 
-app.get('/hello', (req, res) => {
-  res.json('Hello World!')
-})
+// Récupérer toutes les recettes
+app.get("/recettes", async (req, res) => {
+  try {
+    const recettes = await Recette.findAll();
+    res.json(recettes);
+  } catch (error) {
+    console.error("Erreur lors de la récupération des recettes :", error);
+    res.status(500).json({ message: "Erreur lors de la récupération des recettes" });
+  }
+});
 
+// Créer une nouvelle recette
 app.post("/recettes", async (req, res) => {
-  const nom_recette = req.body.nomRecette 
-  const lienImage = req.body.lienImage 
-  const duree = req.body.duree 
-  const note = req.body.note
+  const { nom_recette, lienImage, duree, note } = req.body;
 
-  const nouvelleRecette = await Recette.create({ name: nom_recette, status: true })
+  try {
+    const nouvelleRecette = await Recette.create({
+      nom_recette,
+      lienImage,
+      duree,
+      note,
+    });
 
-  console.log(nom_recette, lienImage, duree, note)
-  res.json(nouvelleRecette)
-})
+    res.json(nouvelleRecette);
+  } catch (error) {
+    console.error("Erreur lors de la création de la recette :", error);
+    res.status(500).json({ message: "Erreur lors de la création de la recette" });
+  }
+});
+
+// Supprimer une recette par son ID
+app.delete("/recettes/:id", async (req, res) => {
+  const recetteId = req.params.id;
+
+  try {
+    const recette = await Recette.findByPk(recetteId);
+
+    if (!recette) {
+      return res.status(404).json({ message: "Recette non trouvée" });
+    }
+
+    await recette.destroy();
+
+    res.json({ message: "Recette supprimée avec succès" });
+  } catch (error) {
+    console.error("Erreur lors de la suppression de la recette :", error);
+    res.status(500).json({ message: "Erreur lors de la suppression de la recette" });
+  }
+});
 
 app.listen(port, () => {
-  console.log(`Listening port on ${port}`)
-})
+  console.log(`Listening on port ${port}`);
+});
